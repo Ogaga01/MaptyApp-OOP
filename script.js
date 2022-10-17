@@ -203,7 +203,13 @@ form.addEventListener('submit', e => {
         className: `${type}-popup`,
       })
     )
-    .setPopupContent('Workout')
+    .setPopupContent(
+      `${
+        workout.type === 'running' ? '🏃‍♂️' : '🚴‍♂️'
+      } ${workout.type[0].toUpperCase()}${workout.type.slice(1)} on ${(
+        workout.date + ''
+      ).slice(4, 7)} ${workout.date.getDate()}`
+    )
     .openPopup();
 
   workouts.push(workout);
