@@ -12,6 +12,28 @@ const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 let map, mapEvent;
 
+class Workout {
+  constructor(type, distance, duration) {
+    this.type = type;
+    this.distance = distance;
+    this.duration = duration;
+  }
+}
+
+class Cycling extends Workout {
+  constructor(type, distance, duration, elevationGain) {
+    super(type, distance, duration);
+    this.elevationGain = elevationGain;
+  }
+}
+
+class Running extends Workout {
+  constructor(type, distance, duration, cadence) {
+    super(type, distance, duration);
+    this.cadence = cadence;
+  }
+}
+
 if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition((position) => {
         console.log(position)
@@ -56,4 +78,10 @@ form.addEventListener('submit', (e) => {
     inputCadence.value = inputDistance.value = inputDuration.value = inputElevation.value = ''
     form.classList.add('hidden')
 })
+
+inputType.addEventListener('change', () => {
+    inputCadence.closest('.form__row').classList.toggle('form__row--hidden')
+    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
+})
+
 
