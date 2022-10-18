@@ -11,6 +11,7 @@ const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
 const workouts = [];
+const zoomLevel = 13
 let map, mapEvent;
 
 class Workout {
@@ -112,7 +113,7 @@ if (navigator.geolocation) {
       const { latitude, longitude } = position.coords;
       const coords = [latitude, longitude];
 
-      map = L.map('map').setView(coords, 13);
+      map = L.map('map').setView(coords, zoomLevel);
 
       L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
         attribution:
@@ -220,3 +221,20 @@ inputType.addEventListener('change', () => {
   inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
   inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
 });
+
+containerWorkouts.addEventListener('click', (e) => {
+    const workoutEl = e.target.closest('.workout')
+    
+    if (!workoutEl) return;
+
+    const workout = workouts.find((work) => {
+        return work.id === workoutEl.dataset.id
+    })
+
+    map.setView(workout.coords, zoomLevel, {
+        animate: true,
+        pan: {
+            duration: 1
+        }
+    })
+})
