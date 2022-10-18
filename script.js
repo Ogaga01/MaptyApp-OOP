@@ -9,9 +9,9 @@ const inputType = document.querySelector('.form__input--type');
 const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
+const zoomLevel = 13;
 const inputElevation = document.querySelector('.form__input--elevation');
 let workouts = [];
-const zoomLevel = 13;
 let map, mapEvent;
 
 class Workout {
