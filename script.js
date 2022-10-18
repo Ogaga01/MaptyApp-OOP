@@ -10,8 +10,8 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
-const workouts = [];
-const zoomLevel = 13
+let workouts = [];
+const zoomLevel = 13;
 let map, mapEvent;
 
 class Workout {
@@ -22,14 +22,24 @@ class Workout {
     this.distance = distance;
     this.duration = duration;
   }
+
+  setDescription() {
+    // prettier-ignore
+    this.months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    this.description = `${this.type[0].toUpperCase()}${this.type.slice(1)} on ${
+      months[this.date.getMonth()]
+    } ${this.date.getDate()}`;
+  }
 }
 
 class Cycling extends Workout {
-    type = 'cycling'
+  type = 'cycling';
   constructor(coords, distance, duration, elevationGain) {
     super(coords, distance, duration);
     this.elevationGain = elevationGain;
     this.calcSpeed();
+    this.setDescription();
   }
 
   calcSpeed() {
@@ -39,11 +49,12 @@ class Cycling extends Workout {
 }
 
 class Running extends Workout {
-    type = 'running'
+  type = 'running';
   constructor(coords, distance, duration, cadence) {
     super(coords, distance, duration);
     this.cadence = cadence;
     this.calcPace();
+    this.setDescription();
   }
 
   calcPace() {
@@ -55,9 +66,7 @@ class Running extends Workout {
 const renderWorkouts = workout => {
   let html = `
         <li class="workout workout--${workout.type}" data-id=${workout.id}>
-          <h2 class="workout__title">${
-            workout.type[0].toUpperCase()
-          }${workout.type.slice(1)} on ${(workout.date+'').slice(4, 7)} ${workout.date.getDate()}</h2>
+          <h2 class="workout__title">${workout.description}</h2>
           <div class="workout__details">
             <span class="workout__icon">${
               workout.type === 'running' ? '🏃‍♂️' : '🚴‍♂️'
@@ -76,7 +85,7 @@ const renderWorkouts = workout => {
     html += `
             <div class="workout__details">
             <span class="workout__icon">⚡️</span>
-            <span class="workout__value">${workout.calcPace().toFixed(1)}</span>
+            <span class="workout__value">${workout.pace.toFixed(1)}</span>
             <span class="workout__unit">min/km</span>
           </div>
           <div class="workout__details">
@@ -92,7 +101,7 @@ const renderWorkouts = workout => {
     html += `
             <div class="workout__details">
             <span class="workout__icon">⚡️</span>
-            <span class="workout__value">${workout.calcSpeed().toFixed(1)}</span>
+            <span class="workout__value">${workout.speed.toFixed(1)}</span>
             <span class="workout__unit">min/km</span>
           </div>
           <div class="workout__details">
@@ -102,9 +111,45 @@ const renderWorkouts = workout => {
           </div>
         </li>
         `;
-    }
-    
-    form.insertAdjacentHTML('afterend', html)
+  }
+
+  form.insertAdjacentHTML('afterend', html);
+};
+
+const setLocalStorage = () => {
+  localStorage.setItem('workouts', JSON.stringify(workouts));
+};
+
+const getLocalStorage = () => {
+  const data = JSON.parse(localStorage.getItem('workouts'));
+
+  if (!data) return;
+
+  workouts = data;
+
+  workouts.forEach(workout => {
+    renderWorkouts(workout);
+  });
+};
+
+getLocalStorage();
+
+const renderWorkoutsMarker = workout => {
+  L.marker(workout.coords)
+    .addTo(map)
+    .bindPopup(
+      L.popup({
+        maxWidth: 250,
+        minWidth: 100,
+        autoClose: false,
+        closeOnClick: false,
+        className: `${workout.type}-popup`,
+      })
+    )
+    .setPopupContent(
+      `${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♂️'} ${workout.description}`
+    )
+    .openPopup();
 };
 
 if (navigator.geolocation) {
@@ -125,6 +170,10 @@ if (navigator.geolocation) {
         form.classList.remove('hidden');
         inputDistance.focus();
       });
+
+      workouts.forEach(workout => {
+        renderWorkoutsMarker(workout);
+      });
     },
     () => {
       alert('Could not load map');
@@ -138,8 +187,8 @@ form.addEventListener('submit', e => {
   const distance = +inputDistance.value;
   const duration = +inputDuration.value;
   const type = inputType.value;
-    let workout;
-    
+  let workout;
+
   const validInputs = (...inputs) => {
     return inputs.every(input => {
       return Number.isFinite(input);
@@ -160,9 +209,9 @@ form.addEventListener('submit', e => {
     )
       return alert('Inputs have to be positive numbers!');
 
-      workout = new Running([lat, lng], distance, duration, cadence);
-      
-      renderWorkouts(workout)
+    workout = new Running([lat, lng], distance, duration, cadence);
+
+    renderWorkouts(workout);
 
     inputCadence.value =
       inputDistance.value =
@@ -181,9 +230,9 @@ form.addEventListener('submit', e => {
     )
       return alert('Inputs have to be positive numbers!');
 
-      workout = new Cycling([lat, lng], distance, duration, elevationGain);
-      
-      renderWorkouts(workout)
+    workout = new Cycling([lat, lng], distance, duration, elevationGain);
+
+    renderWorkouts(workout);
 
     inputCadence.value =
       inputDistance.value =
@@ -193,28 +242,10 @@ form.addEventListener('submit', e => {
     form.classList.add('hidden');
   }
 
-  L.marker([lat, lng])
-    .addTo(map)
-    .bindPopup(
-      L.popup({
-        maxWidth: 250,
-        minWidth: 100,
-        autoClose: false,
-        closeOnClick: false,
-        className: `${type}-popup`,
-      })
-    )
-    .setPopupContent(
-      `${
-        workout.type === 'running' ? '🏃‍♂️' : '🚴‍♂️'
-      } ${workout.type[0].toUpperCase()}${workout.type.slice(1)} on ${(
-        workout.date + ''
-      ).slice(4, 7)} ${workout.date.getDate()}`
-    )
-    .openPopup();
+  renderWorkoutsMarker(workout);
 
   workouts.push(workout);
-  console.log(workouts);
+  setLocalStorage();
 });
 
 inputType.addEventListener('change', () => {
@@ -222,19 +253,19 @@ inputType.addEventListener('change', () => {
   inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
 });
 
-containerWorkouts.addEventListener('click', (e) => {
-    const workoutEl = e.target.closest('.workout')
-    
-    if (!workoutEl) return;
+containerWorkouts.addEventListener('click', e => {
+  const workoutEl = e.target.closest('.workout');
 
-    const workout = workouts.find((work) => {
-        return work.id === workoutEl.dataset.id
-    })
+  if (!workoutEl) return;
 
-    map.setView(workout.coords, zoomLevel, {
-        animate: true,
-        pan: {
-            duration: 1
-        }
-    })
-})
+  const workout = workouts.find(work => {
+    return work.id === workoutEl.dataset.id;
+  });
+
+  map.setView(workout.coords, zoomLevel, {
+    animate: true,
+    pan: {
+      duration: 1,
+    },
+  });
+});
